@@ -1,8 +1,12 @@
 # pyXspecExplorer
 
-pyXspecExplorer helps you to quickly plot and analyze XSPEC X-ray astrophysics models using [pyXSPEC](https://heasarc.gsfc.nasa.gov/xanadu/xspec/python/html/) and [Matplotlib Sliders](https://matplotlib.org/stable/gallery/widgets/slider_demo.html). 
+pyXspecExplorer helps you to quickly plot and analyze XSPEC X-ray astrophysics models using [pyXSPEC](https://heasarc.gsfc.nasa.gov/xanadu/xspec/python/html/) and [Matplotlib Sliders](https://matplotlib.org/stable/gallery/widgets/slider_demo.html).
 
-usage:
+## Screenshot
+
+![](screenshot.png)
+
+## Usage:
 
 Just run `python main.py` to experience with an example using `tbabs(bbodyrad+powerlaw)`.
 
