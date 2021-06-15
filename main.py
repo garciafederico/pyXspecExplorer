@@ -75,11 +75,13 @@ def evaluate_model(params, model, kind):
     modVals = xspec.Plot.model()
     compVals = []
     if len(model.componentNames) > 1:
-        j = 1
+        j = 0
         for i, componentName in enumerate(model.componentNames):
             if 'norm' in getattr(model, componentName).parameterNames:
-                compVals.append(xspec.Plot.addComp(j))
                 j+=1
+        if j > 1:
+            for i in range(j):
+                compVals.append(xspec.Plot.addComp(i+1))
     return xVals, modVals, compVals
 
 
