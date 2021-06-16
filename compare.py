@@ -34,8 +34,8 @@ class Sliderlog(Slider):
 
 def make_plot(plot, energies, modelValues1, modelValues2):
 
-    plot.plot(energies, modelValues1, lw=3)
-    plot.plot(energies, modelValues2, lw=3)
+    plot.plot(energies, modelValues1, lw=3, c='C0')
+    plot.plot(energies, modelValues2, lw=3, c='C1')
 
     plot.set_xlim(0.95*energies[0],1.05*energies[-1])
     plot.set_ylim(max(min(min(modelValues1),min(modelValues2)), max(1.2e-3*max(modelValues1),1.2e-3*max(modelValues2))), max(1.2*max(modelValues1),1.2*1.2*max(modelValues2)))

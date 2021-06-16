@@ -36,9 +36,9 @@ def make_plot(plot, energies, modelValues, compValues, kind='mo'):
 
     if len(compValues) > 1:
         for i in range(len(compValues)):
-            plot.plot(energies, compValues[i], lw=1, ls='--')
+            plot.plot(energies, compValues[i], lw=1, ls='--', c='C{}'.format(i+1))
 
-    plot.plot(energies, modelValues, lw=3)
+    plot.plot(energies, modelValues, lw=2, c='k')
 
     if 'eem' in kind:
         plot.set_ylabel(r'keV$^2$ (Photons cm$^{-2}$ s$^{-1}$ keV$^{-1}$)')
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
     xspec.AllModels.setEnergies(".2 100. 5000 log")
 
-    plt1 = plt.axes([0.15, 0.40, 0.8, 0.5])
+    plt1 = plt.axes([0.15, 0.45, 0.8, 0.5])
     type_sliders, sliders, plt_sliders = [], [], []
     params = []
 
@@ -118,34 +118,46 @@ if __name__ == "__main__":
     xspec.Plot.add = True
 
     model = xspec.Model(ModelName)
-    for i in range(model.nParameters):
-        params.append(model(i+1).values[0])
-
-        plt_sliders.append(plt.axes([0.15, 0.25-i*0.03, 0.6, 0.02]))
-
-        if model(i+1).name == 'norm':
-            model(i+1).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]
-        if model(i+1).name == 'nH':
-            model(i+1).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
-
-        if model(i+1).values[2] > 0 and model(i+1).values[5] > 0:
-            type_sliders.append('log')
-
-            sliders.append(Sliderlog(plt_sliders[i],
-                                  model(i+1).name,
-                                  np.log10(model(i+1).values[3]),
-                                  np.log10(model(i+1).values[4]),
-                                  valinit=np.log10(model(i+1).values[0]),
-                                  valfmt='%7.5f {}'.format(model(i+1).unit)))
+    i = Nadditive = 0
+    for cNumber, componentName in enumerate(model.componentNames):
+        if 'norm' == getattr(model, componentName).parameterNames[-1]:
+            Nadditive += 1
+            Tadditive = True
         else:
-            type_sliders.append('lin')
-            sliders.append(Slider(plt_sliders[i],
-                                  model(i+1).name,
-                                  model(i+1).values[3],
-                                  model(i+1).values[4],
-                                  valinit=model(i+1).values[0],
-                                  valfmt='%7.5f {}'.format(model(i+1).unit)))
-        sliders[i].on_changed(update)
+            Tadditive = False
+
+        for j, parameterName in enumerate(getattr(model, componentName).parameterNames):
+            i += 1
+
+            params.append(model(i).values[0])
+
+            plt_sliders.append(plt.axes([0.15, 0.35-i*0.03, 0.6, 0.02]))
+
+            if model(i).name == 'norm':
+                model(i).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]
+            if model(i).name == 'nH':
+                model(i).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
+
+            if model(i).values[2] > 0 and model(i).values[5] > 0:
+                type_sliders.append('log')
+
+                sliders.append(Sliderlog(plt_sliders[-1],
+                                      model(i).name,
+                                      np.log10(model(i).values[3]),
+                                      np.log10(model(i).values[4]),
+                                      valinit=np.log10(model(i).values[0]),
+                                      valfmt='%7.5f {}'.format(model(i).unit),
+                                      color='C{}'.format(Nadditive) if Tadditive else 'gray'))
+            else:
+                type_sliders.append('lin')
+                sliders.append(Slider(plt_sliders[-1],
+                                      model(i).name,
+                                      model(i).values[3],
+                                      model(i).values[4],
+                                      valinit=model(i).values[0],
+                                      valfmt='%7.5f {}'.format(model(i+1).unit),
+                                      color='C{}'.format(Nadditive) if Tadditive else 'gray'))
+            sliders[-1].on_changed(update)
 
     update(0)
     plt.suptitle('Model: {}'.format(ModelName), y=0.99)
