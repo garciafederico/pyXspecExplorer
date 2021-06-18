@@ -37,11 +37,12 @@ def make_plot(plot, energies, modelValues1, modelValues2):
     plot.plot(energies, modelValues1, lw=3, c='C0')
     plot.plot(energies, modelValues2, lw=3, c='C1')
 
-    plot.set_xlim(0.95*energies[0],1.05*energies[-1])
+    plot.set_xlim(0.095,105.0)
     plot.set_ylim(max(min(min(modelValues1),min(modelValues2)), max(1.2e-3*max(modelValues1),1.2e-3*max(modelValues2))), max(1.2*max(modelValues1),1.2*1.2*max(modelValues2)))
     plot.set_xscale('log')
     plot.get_xaxis().set_major_formatter(matplotlib.ticker.FormatStrFormatter("%g"))
     plot.set_yscale('log')
+    plot.set_ylabel(r'Photons cm$^{-2}$ s$^{-1}$ keV$^{-1}$')
     plot.set_xlabel('Energy (keV)')
     plot.grid()
     return plot
@@ -87,9 +88,10 @@ if __name__ == "__main__":
         ModelName1 = "bbodyrad"
         ModelName2 = "diskbb"
 
-    xspec.AllModels.setEnergies(".2 100. 5000 log")
+    # Make a larger grid for convolution models, and plot in a narrower range
+    xspec.AllModels.setEnergies("0.05 500. 5000 log")
 
-    plt1 = plt.axes([0.15, 0.40, 0.8, 0.5])
+    plt1 = plt.axes([0.15, 0.45, 0.8, 0.5])
     type_sliders1, sliders1, plt_sliders1 = [], [], []
     type_sliders2, sliders2, plt_sliders2 = [], [], []
     params1, params2 = [], []
@@ -102,7 +104,7 @@ if __name__ == "__main__":
     for i in range(model1.nParameters):
         params1.append(model1(i+1).values[0])
 
-        plt_sliders1.append(plt.axes([0.15, 0.25-i*0.03, 0.20, 0.02]))
+        plt_sliders1.append(plt.axes([0.15, 0.33-i*0.03, 0.20, 0.02]))
 
         if model1(i+1).name == 'norm':
             model1(i+1).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]
@@ -136,7 +138,7 @@ if __name__ == "__main__":
     for i in range(model2.nParameters):
         params2.append(model2(i+1).values[0])
 
-        plt_sliders2.append(plt.axes([0.65, 0.25-i*0.03, 0.20, 0.02]))
+        plt_sliders2.append(plt.axes([0.65, 0.33-i*0.03, 0.20, 0.02]))
 
         if model2(i+1).name == 'norm':
             model2(i+1).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]

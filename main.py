@@ -48,7 +48,7 @@ def make_plot(plot, energies, modelValues, compValues, kind='mo'):
         plot.set_ylabel(r'Photons cm$^{-2}$ s$^{-1}$ keV$^{-1}$')
     #plot.set_yticks([0.001,0.01,0.1,10.0,100.0])
     #plot.set_yticklabels(['0.001','0.01','0.1','10.0','100.0'])
-    plot.set_xlim(0.95*energies[0],1.05*energies[-1])
+    plot.set_xlim(0.095,105.0)
     plot.set_ylim(max(min(modelValues), 1.2e-3*max(modelValues)), 1.2*max(modelValues))
     plot.set_xscale('log')
     plot.get_xaxis().set_major_formatter(matplotlib.ticker.FormatStrFormatter("%g"))
@@ -107,7 +107,8 @@ if __name__ == "__main__":
         ModelName = "bbodyrad+nthcomp"
         kind = "mo"
 
-    xspec.AllModels.setEnergies(".2 100. 5000 log")
+    # Make a larger grid for convolution models, and plot in a narrower range
+    xspec.AllModels.setEnergies("0.05 500. 5000 log")
 
     plt1 = plt.axes([0.15, 0.45, 0.8, 0.5])
     type_sliders, sliders, plt_sliders = [], [], []
@@ -131,11 +132,13 @@ if __name__ == "__main__":
 
             params.append(model(i).values[0])
 
-            plt_sliders.append(plt.axes([0.15, 0.35-i*0.03, 0.6, 0.02]))
+            plt_sliders.append(plt.axes([0.15, 0.36-i*0.03, 0.6, 0.02]))
 
             if model(i).name == 'norm':
                 model(i).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]
             if model(i).name == 'nH':
+                model(i).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
+            if model(i).name == 'Tin':
                 model(i).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
 
             if model(i).values[2] > 0 and model(i).values[5] > 0:
