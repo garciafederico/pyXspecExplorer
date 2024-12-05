@@ -5,10 +5,8 @@ from matplotlib.widgets import Slider, RadioButtons
 import matplotlib.ticker
 import xspec
 
-if True:
+if False:
     xspec.AllModels.lmod("relxill", "/opt/relxill/relxill")
-    xspec.AllModels.lmod("rnthcomp", "~/github/rnthcomp/")
-    xspec.AllModels.lmod("nthratio", "~/github/nthratio/")
 
 def make_plot(plot, energies, modelValues1, modelValues2, renorm=5.0):
 
@@ -20,17 +18,17 @@ def make_plot(plot, energies, modelValues1, modelValues2, renorm=5.0):
         modelValues1 /= modelValues1[arg]
         modelValues2 /= modelValues2[arg]
 
-    #plot.plot(energies, modelValues1, lw=3, c='C0')
-    #plot.plot(energies, modelValues2, lw=3, c='C1')
-    plt.plot(energies, modelValues1/modelValues2, lw=3, c='black')
+    plot.plot(energies, modelValues1, lw=3, c='C0')
+    plot.plot(energies, modelValues2, lw=3, c='C1')
+    #plt.plot(energies, modelValues1/modelValues2, lw=3, c='black')
 
     plot.set_xlim(0.095,105.0)
     plot.set_ylim(max(min(min(modelValues1),min(modelValues2)), max(1.2e-3*max(modelValues1),1.2e-3*max(modelValues2))), max(1.2*max(modelValues1),1.2*1.2*max(modelValues2)))
-    plot.set_ylim(0.5,1.5)
+    #plot.set_ylim(0.5,1.5)
     #plot.set_ylim(0.1,10.)
     plot.set_xscale('log')
     plot.get_xaxis().set_major_formatter(matplotlib.ticker.FormatStrFormatter("%g"))
-    #plot.set_yscale('log')
+    plot.set_yscale('log')
     plot.set_ylabel(r'keV(Photons cm$^{-2}$ s$^{-1}$ keV$^{-1}$)')
     #plot.set_ylabel(r'Photons cm$^{-2}$ s$^{-1}$ keV$^{-1}$')
     plot.set_xlabel('Energy (keV)')
@@ -43,6 +41,7 @@ def read_sliders(list_sliders, type_sliders):
     for i, (slider, type_slider) in enumerate(zip(list_sliders, type_sliders)):
         if 'log' in type_slider:
             params.append(10**slider.val)
+            slider.valtext.set_text(slider.valfmt % 10**slider.val)
         else:
             params.append(slider.val)
     return params
@@ -112,18 +111,16 @@ if __name__ == "__main__":
         if model1(i+1).name == 'gamma':
             model1(i+1).values = [2.31, 0.01, 1.5, 1.5, 3.5, 3.5]
 
-        if False:
-            pass
-            # model1(i+1).values[2] > 0 and model1(i+1).values[5] > 0:
-            # type_sliders1.append('log')
-            #
-            # sliders1.append(Sliderlog(plt_sliders1[i],
-            #                       model1(i+1).name,
-            #                       np.log10(model1(i+1).values[3]),
-            #                       np.log10(model1(i+1).values[4]),
-            #                       valinit=np.log10(model1(i+1).values[0]),
-            #                       valfmt='%7.5f {}'.format(model1(i+1).unit),
-            #                       color='C0'))
+        if model1(i+1).values[2] > 0 and model1(i+1).values[5] > 0:
+            type_sliders1.append('log')
+
+            sliders1.append(Slider(plt_sliders1[i],
+                                  model1(i+1).name,
+                                  np.log10(model1(i+1).values[3]),
+                                  np.log10(model1(i+1).values[4]),
+                                  valinit=np.log10(model1(i+1).values[0]),
+                                  valfmt='%7.5f {}'.format(model1(i+1).unit),
+                                  color='C0'))
         else:
             type_sliders1.append('lin')
             sliders1.append(Slider(plt_sliders1[i],
@@ -154,8 +151,7 @@ if __name__ == "__main__":
         if model2(i+1).name == 'Xi':
             FlagLog = True
 
-        if FlagLog:
-            # model2(i+1).values[2] > 0 and model2(i+1).values[5] > 0:
+        if model2(i+1).values[2] > 0 and model2(i+1).values[5] > 0 or FlagLog:
             type_sliders2.append('log')
             sliders2.append(Slider(plt_sliders2[i],
                                model2(i+1).name,
