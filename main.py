@@ -6,32 +6,6 @@ import matplotlib.ticker
 import xspec
 
 
-# https://stackoverflow.com/questions/39960791/logarithmic-slider-with-matplotlib
-class Sliderlog(Slider):
-    """Logarithmic slider.
-        Takes in every method and function of the matplotlib's slider.
-        Set slider to *val* visually so the slider still is lineat but display 10**val next to the slider.
-        Return 10**val to the update function (func)"""
-
-    def set_val(self, val):
-        xy = self.poly.xy
-        if self.orientation == 'vertical':
-            xy[1] = 0, val
-            xy[2] = 1, val
-        else:
-            xy[2] = val, 1
-            xy[3] = val, 0
-        self.poly.xy = xy
-        self.valtext.set_text(self.valfmt % 10**val)   # Modified to display 10**val instead of val
-        if self.drawon:
-            self.ax.figure.canvas.draw_idle()
-        self.val = val
-        if not self.eventson:
-            return
-        for cid, func in self.observers.items():
-                func(10**val)
-
-
 def make_plot(plot, energies, modelValues, compValues, kind='mo'):
 
     if len(compValues) > 1:
@@ -63,6 +37,7 @@ def read_sliders(list_sliders, type_sliders):
     for i, (slider, type_slider) in enumerate(zip(list_sliders, type_sliders)):
         if 'log' in type_slider:
             params.append(10**slider.val)
+            slider.valtext.set_text(slider.valfmt % 10**slider.val)
         else:
             params.append(slider.val)
     return params
@@ -144,13 +119,13 @@ if __name__ == "__main__":
             if model(i).values[2] > 0 and model(i).values[5] > 0:
                 type_sliders.append('log')
 
-                sliders.append(Sliderlog(plt_sliders[-1],
-                                      model(i).name,
-                                      np.log10(model(i).values[3]),
-                                      np.log10(model(i).values[4]),
-                                      valinit=np.log10(model(i).values[0]),
-                                      valfmt='%7.5f {}'.format(model(i).unit),
-                                      color='C{}'.format(Nadditive) if Tadditive else 'gray'))
+                sliders.append(Slider(plt_sliders[-1],
+                                   model(i).name,
+                                   np.log10(model(i).values[3]),
+                                   np.log10(model(i).values[4]),
+                                   valinit=np.log10(model(i).values[0]),
+                                   valfmt='%7.5f {}'.format(model(i).unit),
+                                   color='C{}'.format(Nadditive) if Tadditive else 'gray'))
             else:
                 type_sliders.append('lin')
                 sliders.append(Slider(plt_sliders[-1],
