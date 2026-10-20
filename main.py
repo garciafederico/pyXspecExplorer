@@ -1,7 +1,7 @@
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, RadioButtons
+from matplotlib.widgets import Slider, RadioButtons, TextBox
 import matplotlib.ticker
 import xspec
 
@@ -32,14 +32,23 @@ def make_plot(plot, energies, modelValues, compValues, kind='mo'):
     return plot
 
 
-def read_sliders(list_sliders, type_sliders):
+def read_sliders(list_sliders, type_sliders, list_textboxes=None):
     params = []
     for i, (slider, type_slider) in enumerate(zip(list_sliders, type_sliders)):
         if 'log' in type_slider:
-            params.append(10**slider.val)
-            slider.valtext.set_text(slider.valfmt % 10**slider.val)
+            val = 10**slider.val
+            params.append(val)
+            slider.valtext.set_text(slider.valfmt % val)
         else:
-            params.append(slider.val)
+            val = slider.val
+            params.append(val)
+        
+        # Update the corresponding text box so it matches the slider movement
+        if list_textboxes is not None and i < len(list_textboxes):
+            new_text = f"{val:7.5g}"
+            if list_textboxes[i].text != new_text:
+                list_textboxes[i].set_val(new_text)
+
     return params
 
 
@@ -61,7 +70,8 @@ def evaluate_model(params, model, kind):
 
 
 def update(a):
-    params = read_sliders(sliders, type_sliders)
+    global text_boxes
+    params = read_sliders(sliders, type_sliders, text_boxes if 'text_boxes' in globals() else None)
     energies, modelValues, compValues = evaluate_model(params, model, kind)
 
     plt.sca(plt1)
@@ -87,6 +97,7 @@ if __name__ == "__main__":
 
     plt1 = plt.axes([0.15, 0.45, 0.8, 0.5])
     type_sliders, sliders, plt_sliders = [], [], []
+    text_boxes, plt_textboxes = [], [] 
     params = []
 
     xspec.Plot.device = "/null"
@@ -107,12 +118,13 @@ if __name__ == "__main__":
 
             params.append(model(i).values[0])
 
-            plt_sliders.append(plt.axes([0.15, 0.36-i*0.03, 0.6, 0.02]))
+            plt_sliders.append(plt.axes([0.15, 0.36-i*0.03, 0.45, 0.02]))
+            plt_textboxes.append(plt.axes([0.70, 0.36-i*0.03, 0.15, 0.02]))
 
             if model(i).name == 'norm':
-                model(i).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]
+                model(i).values = [1, 0.01, 1e-7, 1e-7, 1e1, 1e1]
             if model(i).name == 'nH':
-                model(i).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
+                model(i).values = [1, 0.01, 1e-3, 1e-3, 1e1, 1e1]
             if model(i).name == 'Tin':
                 model(i).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
 
@@ -136,6 +148,25 @@ if __name__ == "__main__":
                                       valfmt='%7.5f {}'.format(model(i+1).unit),
                                       color='C{}'.format(Nadditive) if Tadditive else 'gray'))
             sliders[-1].on_changed(update)
+
+            # Create TextBox
+            initial_val = 10**sliders[-1].val if type_sliders[-1] == 'log' else sliders[-1].val
+            tb = TextBox(plt_textboxes[-1], '', initial=f"{initial_val:7.5g}")
+            text_boxes.append(tb)
+
+            # Callback function: executes when you press 'Enter' inside the textbox
+            def submit_text(text, idx=len(sliders)-1):
+                try:
+                    val = float(text)
+                    if type_sliders[idx] == 'log':
+                        if val > 0: # Ensure log scale stays valid
+                            sliders[idx].set_val(np.log10(val))
+                    else:
+                        sliders[idx].set_val(val)
+                except ValueError:
+                    pass # If the user accidentally types letters, do nothing
+
+            text_boxes[-1].on_submit(submit_text)
 
     update(0)
     plt.suptitle('Model: {}'.format(ModelName), y=0.99)

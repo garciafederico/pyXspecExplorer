@@ -1,7 +1,7 @@
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, RadioButtons
+from matplotlib.widgets import Slider, RadioButtons, TextBox
 import matplotlib.ticker
 import xspec
 
@@ -36,20 +36,30 @@ def make_plot(plot, energies, modelValues1, modelValues2, renorm=5.0):
     return plot
 
 
-def read_sliders(list_sliders, type_sliders):
+def read_sliders(list_sliders, type_sliders, list_textboxes=None):
     params = []
     for i, (slider, type_slider) in enumerate(zip(list_sliders, type_sliders)):
         if 'log' in type_slider:
-            params.append(10**slider.val)
-            slider.valtext.set_text(slider.valfmt % 10**slider.val)
+            val = 10**slider.val
+            params.append(val)
+            slider.valtext.set_text(slider.valfmt % val)
         else:
-            params.append(slider.val)
+            val = slider.val
+            params.append(val)
+        
+        # Update corresponding text box on slider drag
+        if list_textboxes is not None and i < len(list_textboxes):
+            new_text = f"{val:7.5g}"
+            if list_textboxes[i].text != new_text:
+                list_textboxes[i].set_val(new_text)
+
     return params
 
 
 def update(a):
-    params1 = read_sliders(sliders1, type_sliders1)
-    params2 = read_sliders(sliders2, type_sliders2)
+    global text_boxes1, text_boxes2
+    params1 = read_sliders(sliders1, type_sliders1, text_boxes1 if 'text_boxes1' in globals() else None)
+    params2 = read_sliders(sliders2, type_sliders2, text_boxes2 if 'text_boxes2' in globals() else None)
 
     model1 = xspec.Model(ModelName1)
     model1.setPars(*params1)
@@ -83,6 +93,8 @@ if __name__ == "__main__":
     plt1 = plt.axes([0.15, 0.45, 0.8, 0.5])
     type_sliders1, sliders1, plt_sliders1 = [], [], []
     type_sliders2, sliders2, plt_sliders2 = [], [], []
+    text_boxes1, plt_textboxes1 = [], []
+    text_boxes2, plt_textboxes2 = [], []
     params1, params2 = [], []
 
     xspec.Plot.device = "/null"
@@ -93,12 +105,13 @@ if __name__ == "__main__":
     for i in range(model1.nParameters):
         params1.append(model1(i+1).values[0])
 
-        plt_sliders1.append(plt.axes([0.15, 0.35-i*0.017, 0.20, 0.02]))
+        plt_sliders1.append(plt.axes([0.10, 0.35-i*0.025, 0.18, 0.015]))
+        plt_textboxes1.append(plt.axes([0.35, 0.35-i*0.025, 0.08, 0.015]))
 
         if model1(i+1).name == 'norm':
-            model1(i+1).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]
+            model1(i+1).values = [1, 0.01, 1e-7, 1e-7, 1e1, 1e1]
         if model1(i+1).name == 'nH':
-            model1(i+1).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
+            model1(i+1).values = [1, 0.01, 1e-3, 1e-3, 1e1, 1e1]
         if model1(i+1).name == 'Tin':
             model1(i+1).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
 
@@ -132,18 +145,35 @@ if __name__ == "__main__":
                                   color='C0'))
         sliders1[i].on_changed(update)
 
+        initial_val1 = 10**sliders1[-1].val if type_sliders1[-1] == 'log' else sliders1[-1].val
+        tb1 = TextBox(plt_textboxes1[-1], '', initial=f"{initial_val1:7.5g}")
+        text_boxes1.append(tb1)
+
+        def submit_text1(text, idx=i):
+            try:
+                val = float(text)
+                if type_sliders1[idx] == 'log':
+                    if val > 0:
+                        sliders1[idx].set_val(np.log10(val))
+                else:
+                    sliders1[idx].set_val(val)
+            except ValueError:
+                pass
+        text_boxes1[-1].on_submit(submit_text1)
+
     model2 = xspec.Model(ModelName2)
     for i in range(model2.nParameters):
         params2.append(model2(i+1).values[0])
 
-        plt_sliders2.append(plt.axes([0.65, 0.35-i*0.017, 0.20, 0.02]))
+        plt_sliders2.append(plt.axes([0.55, 0.35-i*0.025, 0.18, 0.015]))
+        plt_textboxes2.append(plt.axes([0.80, 0.35-i*0.025, 0.08, 0.015]))
 
         FlagLog = False
 
         if model2(i+1).name == 'norm':
-            model2(i+1).values = [1, 0.01, 1e-3, 1e-3, 1e3, 1e3]
+            model2(i+1).values = [1, 0.01, 1e-7, 1e-7, 1e1, 1e1]
         if model2(i+1).name == 'nH':
-            model2(i+1).values = [1, 0.01, 1e-4, 1e-4, 2, 2]
+            model2(i+1).values = [1, 0.01, 1e-3, 1e-3, 1e1, 1e1]
         if model2(i+1).name == 'Tin':
             model2(i+1).values = [1, 0.01, 1e-4, 1e-4, 1e2, 1e2]
         if model2(i+1).name == 'Density':
@@ -170,6 +200,23 @@ if __name__ == "__main__":
                                   valfmt='%7.5f {}'.format(model2(i+1).unit),
                                   color='C1'))
         sliders2[i].on_changed(update)
+
+        initial_val2 = 10**sliders2[-1].val if type_sliders2[-1] == 'log' else sliders2[-1].val
+        tb2 = TextBox(plt_textboxes2[-1], '', initial=f"{initial_val2:7.5g}")
+        text_boxes2.append(tb2)
+
+        def submit_text2(text, idx=i):
+            try:
+                val = float(text)
+                if type_sliders2[idx] == 'log':
+                    if val > 0:
+                        sliders2[idx].set_val(np.log10(val))
+                else:
+                    sliders2[idx].set_val(val)
+            except ValueError:
+                pass
+        text_boxes2[-1].on_submit(submit_text2)
+
 
     update(0)
     plt.suptitle('Models: {}  vs  {}'.format(ModelName1, ModelName2), y=0.99)
